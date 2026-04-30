@@ -57,28 +57,47 @@ tab_predict, tab_experiments, tab_gallery = st.tabs([
 # ===========================================================================
 
 with tab_predict:
-    st.header("Upload a Satellite Image")
-    st.write("Upload a satellite or aerial image to see land cover segmentation predictions.")
+    st.header("Run Prediction on a Satellite Image")
+    st.write("Pick an image from the DeepGlobe dataset below, or upload your own.")
 
-    uploaded = st.file_uploader(
-        "Choose an image...", type=["png", "jpg", "jpeg"], key="uploader"
-    )
+    source = st.radio("Image source:", ["Select from dataset", "Upload your own image"],
+                       horizontal=True, key="source_radio")
 
-    if uploaded is not None:
-        pil_img = Image.open(uploaded)
+    pil_img = None
+    image_label = ""
+
+    if source == "Select from dataset":
+        sample_idx = st.selectbox(
+            "Choose a sample (0–299):",
+            options=list(range(300)),
+            format_func=lambda i: f"Sample {i}",
+            key="dataset_select",
+        )
+        sid = f"{sample_idx:04d}"
+        pil_img = Image.open(f"full_dataset/images/{sid}.jpg")
+        image_label = f"Sample {sample_idx}"
+    else:
+        uploaded = st.file_uploader(
+            "Choose an image...", type=["png", "jpg", "jpeg"], key="uploader"
+        )
+        if uploaded is not None:
+            pil_img = Image.open(uploaded)
+            image_label = "Uploaded Image"
+
+    if pil_img is not None:
         with st.spinner("Running prediction..."):
             model = get_model()
             pred_rgb = predict_image(model, pil_img)
 
         col1, col2 = st.columns(2)
         with col1:
-            st.image(pil_img, caption="Uploaded Image", use_container_width=True)
+            st.image(pil_img, caption=image_label, use_container_width=True)
         with col2:
             st.image(pred_rgb, caption="Land Cover Prediction", use_container_width=True)
 
         st.subheader("Class Legend")
         show_legend()
-    else:
+    elif source == "Upload your own image":
         st.info("Upload a PNG or JPEG image above to get started.")
 
 # ===========================================================================
