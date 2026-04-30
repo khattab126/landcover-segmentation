@@ -201,25 +201,54 @@ with tab_experiments:
     """)
 
 # ===========================================================================
-# TAB 3 — Gallery
+# TAB 3 — Gallery (full 300-sample dataset)
 # ===========================================================================
 
+FULL_IDS = [f"{i:04d}" for i in range(300)]
+PER_PAGE = 6
+
 with tab_gallery:
-    st.header("Sample Predictions from DeepGlobe Dataset")
-    st.write("Pre-computed predictions on sample satellite images using the best model (pfCE, 50 points/class).")
+    st.header("Full DeepGlobe Dataset (300 Samples)")
+    st.write(
+        f"Pre-computed predictions on all 300 satellite images from the DeepGlobe Land Cover dataset, "
+        f"using the best model (pfCE, 50 points/class, best-epoch mIoU = 0.300)."
+    )
 
-    demo_ids = [f"{i:04d}" for i in range(0, 300, 30)]
+    # Navigation controls
+    total_pages = (len(FULL_IDS) + PER_PAGE - 1) // PER_PAGE
+    nav_cols = st.columns([1, 3, 1])
+    with nav_cols[0]:
+        if st.button("Previous", key="prev_btn"):
+            st.session_state.page = max(0, st.session_state.get("page", 0) - 1)
+    with nav_cols[1]:
+        page = st.session_state.get("page", 0)
+        page = st.number_input(
+            f"Page (1-{total_pages})", min_value=1, max_value=total_pages,
+            value=page + 1, key="page_input",
+        )
+        st.session_state.page = page - 1
+    with nav_cols[2]:
+        if st.button("Next", key="next_btn"):
+            st.session_state.page = min(total_pages - 1, st.session_state.get("page", 0) + 1)
 
-    for i in range(0, len(demo_ids), 2):
+    page = st.session_state.get("page", 0)
+    start = page * PER_PAGE
+    end = min(start + PER_PAGE, len(FULL_IDS))
+    st.caption(f"Showing samples {start + 1}–{end} of {len(FULL_IDS)}")
+
+    # Display grid: PER_PAGE/2 rows x 2 columns, each with 3 sub-columns
+    page_ids = FULL_IDS[start:end]
+    for i in range(0, len(page_ids), 2):
         cols = st.columns(2)
         for j, col in enumerate(cols):
             idx = i + j
-            if idx < len(demo_ids):
-                did = demo_ids[idx]
+            if idx < len(page_ids):
+                did = page_ids[idx]
+                sample_num = int(did)
                 c1, c2, c3 = col.columns(3)
-                c1.image(f"demo/images/{did}.jpg", caption="Satellite", use_container_width=True)
-                c2.image(f"demo/masks/{did}.png", caption="Ground Truth", use_container_width=True)
-                c3.image(f"demo/predictions/{did}.png", caption="Prediction", use_container_width=True)
+                c1.image(f"full_dataset/images/{did}.jpg", caption=f"Sample {sample_num}", use_container_width=True)
+                c2.image(f"full_dataset/masks/{did}.png", caption="Ground Truth", use_container_width=True)
+                c3.image(f"full_dataset/predictions/{did}.png", caption="Prediction", use_container_width=True)
 
     st.subheader("Class Legend")
     show_legend()
