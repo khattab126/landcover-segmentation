@@ -69,7 +69,7 @@ def colorize(mask_np: np.ndarray) -> np.ndarray:
 
 def load_model(weights_path: str = "model/best_model.pth") -> SmallUNet:
     model = SmallUNet(num_classes=NUM_CLASSES)
-    state = torch.load(weights_path, map_location="cpu", weights_only=True)
+    state = torch.load(weights_path, map_location="cpu")
     model.load_state_dict(state)
     model.eval()
     return model
